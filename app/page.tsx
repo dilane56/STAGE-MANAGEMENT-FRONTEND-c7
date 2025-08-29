@@ -24,11 +24,11 @@ export default function HomePage() {
   }
 
   switch (user.role) {
-    case "student":
+    case "etudiant":
       return <StudentDashboard />
-    case "company":
+    case "entreprise":
       return <CompanyDashboard />
-    case "teacher":
+    case "enseignant":
       return <TeacherDashboard />
     case "admin":
       return <AdminDashboard />

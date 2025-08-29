@@ -18,11 +18,11 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "student":
+      case "etudiant":
         return "Étudiant"
-      case "company":
+      case "entreprise":
         return "Entreprise"
-      case "teacher":
+      case "enseignant":
         return "Enseignant"
       case "admin":
         return "Administrateur"
@@ -33,11 +33,11 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "student":
+      case "etudiant":
         return "bg-blue-100 text-blue-800"
-      case "company":
+      case "entreprise":
         return "bg-green-100 text-green-800"
-      case "teacher":
+      case "enseignant":
         return "bg-purple-100 text-purple-800"
       case "admin":
         return "bg-red-100 text-red-800"
