@@ -3,6 +3,7 @@ import { Geist, Manrope } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as Sonner } from "sonner"
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
+          <Sonner richColors position="top-right" />
         </AuthProvider>
       </body>
     </html>

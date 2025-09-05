@@ -3,25 +3,35 @@ const API_BASE_URL = "http://localhost:9001"
 class ApiService {
   private getAuthHeaders() {
     const token = localStorage.getItem("token")
-    return {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` })
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
     }
+    
+    console.log("Token utilisé dans les headers:", token);
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+    
+    return headers
   }
 
   async request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`
+    const headers = {
+      ...this.getAuthHeaders(),
+      ...options.headers
+    }
+    
+    console.log('Request:', { url, headers })
     
     const response = await fetch(url, {
       ...options,
-      headers: {
-        ...this.getAuthHeaders(),
-        ...options.headers
-      }
+      headers
     })
 
-    if (response.status === 401) {
-      // Token expired, try to refresh
+    if (response.status === 401 || response.status === 403) {
+      // Token expired or invalid, try to refresh
       const refreshToken = localStorage.getItem("refreshToken")
       if (refreshToken) {
         try {
@@ -45,13 +55,16 @@ class ApiService {
             })
           }
         } catch (error) {
-          // Refresh failed, redirect to login
-          localStorage.removeItem("token")
-          localStorage.removeItem("refreshToken")
-          localStorage.removeItem("user")
-          window.location.href = "/"
+          console.error("Token refresh failed:", error)
         }
       }
+      
+      // If refresh fails or no refresh token, redirect to login
+      localStorage.removeItem("token")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("user")
+      window.location.href = "/"
+      return response
     }
 
     return response

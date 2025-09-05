@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
 
 export function LoginForm() {
@@ -20,8 +21,12 @@ export function LoginForm() {
     e.preventDefault()
     setError("")
     try {
-      await login(email, password)
+      const result = await login(email, password)
+      if (result?.success) {
+        toast.success("Connexion réussie!")
+      }
     } catch (error: any) {
+      toast.error(error.message || "Erreur de connexion")
       setError(error.message || "Erreur de connexion")
     }
   }

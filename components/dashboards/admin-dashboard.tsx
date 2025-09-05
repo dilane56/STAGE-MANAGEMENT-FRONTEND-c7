@@ -1,32 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
-import { Users, Building2, FileText, TrendingUp, Plus, Eye, Settings, Download } from "lucide-react"
-
-interface SystemStats {
-  totalUsers: number
-  totalCompanies: number
-  totalInternships: number
-  totalConventions: number
-  activeInternships: number
-  pendingConventions: number
-}
+import { Users, Building2, FileText, TrendingUp, Plus, Eye, Settings, Download, Search, Trash2, Tag } from "lucide-react"
+import { userService, type BackendUser } from "@/lib/user-service"
+import { statsService, type AdminStats } from "@/lib/stats-service"
+import { secteurService, type Secteur } from "@/lib/secteur-service"
+import { CreateUserModal } from "@/components/admin/create-user-modal"
+import { ViewUserModal } from "@/components/admin/view-user-modal"
+import { EditUserModal } from "@/components/admin/edit-user-modal"
+import { CreateSecteurModal } from "@/components/admin/secteurs/create-secteur-modal"
+import { EditSecteurModal } from "@/components/admin/secteurs/edit-secteur-modal"
 
 export function AdminDashboard() {
-  const [stats] = useState<SystemStats>({
-    totalUsers: 1247,
-    totalCompanies: 89,
-    totalInternships: 156,
-    totalConventions: 134,
-    activeInternships: 78,
-    pendingConventions: 23,
+  const [stats, setStats] = useState<AdminStats>({
+    totalUsers: 0,
+    totalCompanies: 0,
+    totalInternships: 0,
+    totalConventions: 0,
+    activeInternships: 0,
+    pendingConventions: 0,
   })
 
   const internshipsByField = [
@@ -47,22 +47,90 @@ export function AdminDashboard() {
     { month: "Jun", internships: 35, applications: 134 },
   ]
 
-  const recentUsers = [
-    { id: "1", name: "Marie Dubois", email: "marie.dubois@student.fr", role: "student", joinDate: "2024-01-25" },
-    { id: "2", name: "TechCorp", email: "contact@techcorp.fr", role: "company", joinDate: "2024-01-24" },
-    { id: "3", name: "Pierre Martin", email: "pierre.martin@student.fr", role: "student", joinDate: "2024-01-23" },
-    { id: "4", name: "Prof. Laurent", email: "laurent@university.fr", role: "teacher", joinDate: "2024-01-22" },
-  ]
+  const [users, setUsers] = useState<BackendUser[]>([])
+  const [secteurs, setSecteurs] = useState<Secteur[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingSecteurs, setIsLoadingSecteurs] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<BackendUser | null>(null)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isCreateSecteurModalOpen, setIsCreateSecteurModalOpen] = useState(false)
+  const [selectedSecteur, setSelectedSecteur] = useState<Secteur | null>(null)
+  const [isEditSecteurModalOpen, setIsEditSecteurModalOpen] = useState(false)
+
+  const loadUsers = async () => {
+    setIsLoading(true)
+    try {
+      const data = await userService.getUsers()
+      setUsers(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des utilisateurs:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadSecteurs = async () => {
+    setIsLoadingSecteurs(true)
+    try {
+      const data = await secteurService.getAllSecteurs()
+      setSecteurs(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des secteurs:', error)
+    } finally {
+      setIsLoadingSecteurs(false)
+    }
+  }
+
+  useEffect(() => {
+    loadUsers()
+    loadStats()
+    loadSecteurs()
+  }, [])
+
+  const loadStats = async () => {
+    try {
+      const data = await statsService.getDashboardStats()
+      setStats(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des statistiques:', error)
+    }
+  }
+
+  const handleDeleteUser = async (userId: number) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+      try {
+        await userService.deleteUser(userId)
+        loadUsers()
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error)
+        alert('Erreur lors de la suppression de l\'utilisateur')
+      }
+    }
+  }
+
+  const handleDeleteSecteur = async (secteurId: number) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce secteur ?')) {
+      try {
+        await secteurService.deleteSecteur(secteurId)
+        loadSecteurs()
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error)
+        alert('Erreur lors de la suppression du secteur')
+      }
+    }
+  }
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "student":
+      case "ETUDIANT":
         return "Étudiant"
-      case "company":
+      case "ENTREPRISE":
         return "Entreprise"
-      case "teacher":
+      case "ENSEIGNANT":
         return "Enseignant"
-      case "admin":
+      case "ADMIN":
         return "Admin"
       default:
         return role
@@ -71,13 +139,13 @@ export function AdminDashboard() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "student":
+      case "ETUDIANT":
         return "bg-blue-100 text-blue-800"
-      case "company":
+      case "ENTREPRISE":
         return "bg-green-100 text-green-800"
-      case "teacher":
+      case "ENSEIGNANT":
         return "bg-purple-100 text-purple-800"
-      case "admin":
+      case "ADMIN":
         return "bg-red-100 text-red-800"
       default:
         return "bg-gray-100 text-gray-800"
@@ -142,6 +210,7 @@ export function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
             <TabsTrigger value="reports">Rapports</TabsTrigger>
           </TabsList>
 
@@ -270,44 +339,143 @@ export function AdminDashboard() {
           <TabsContent value="users" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Gestion des utilisateurs</h2>
-              <Button>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nouvel utilisateur
               </Button>
             </div>
 
+
+
             <Card>
               <CardHeader>
-                <CardTitle>Utilisateurs récents</CardTitle>
-                <CardDescription>Dernières inscriptions sur la plateforme</CardDescription>
+                <CardTitle>Liste des utilisateurs ({users.length})</CardTitle>
+                <CardDescription>Gestion des comptes utilisateurs</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="font-medium">{user.name}</h3>
-                          <Badge className={getRoleColor(user.role)}>{getRoleLabel(user.role)}</Badge>
+                {isLoading ? (
+                  <div className="text-center py-8">Chargement...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="font-medium">{user.fullName}</h3>
+                            <Badge className={getRoleColor(user.role)}>{getRoleLabel(user.role)}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          {user.telephone && (
+                            <p className="text-xs text-muted-foreground">{user.telephone}</p>
+                          )}
+                          {user.createAt && (
+                            <p className="text-xs text-muted-foreground">
+                              Inscrit le {new Date(user.createAt).toLocaleDateString("fr-FR")}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Inscrit le {new Date(user.joinDate).toLocaleDateString("fr-FR")}
-                        </p>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setIsViewModalOpen(true)
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Voir
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setIsEditModalOpen(true)
+                            }}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Voir
-                        </Button>
-                        <Button size="sm">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Gérer
-                        </Button>
+                    ))}
+                    
+
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="secteurs" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Gestion des secteurs</h2>
+              <Button onClick={() => setIsCreateSecteurModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nouveau secteur
+              </Button>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Liste des secteurs ({secteurs.length})</CardTitle>
+                <CardDescription>Gestion des secteurs d'activité pour les offres de stage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingSecteurs ? (
+                  <div className="text-center py-8">Chargement...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {secteurs.map((secteur) => (
+                      <div key={secteur.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Tag className="h-5 w-5 text-primary" />
+                          <div>
+                            <h3 className="font-medium">{secteur.nomSecteur}</h3>
+                            <p className="text-sm text-muted-foreground">ID: {secteur.id}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSecteur(secteur)
+                              setIsEditSecteurModalOpen(true)
+                            }}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteSecteur(secteur.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                    {secteurs.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Aucun secteur trouvé. Créez le premier secteur.
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -374,6 +542,38 @@ export function AdminDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+        
+        <CreateUserModal 
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onUserCreated={loadUsers}
+        />
+        
+        <ViewUserModal 
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          user={selectedUser}
+        />
+        
+        <EditUserModal 
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onUserUpdated={loadUsers}
+          user={selectedUser}
+        />
+        
+        <CreateSecteurModal 
+          isOpen={isCreateSecteurModalOpen}
+          onClose={() => setIsCreateSecteurModalOpen(false)}
+          onSecteurCreated={loadSecteurs}
+        />
+        
+        <EditSecteurModal 
+          isOpen={isEditSecteurModalOpen}
+          onClose={() => setIsEditSecteurModalOpen(false)}
+          onSecteurUpdated={loadSecteurs}
+          secteur={selectedSecteur}
+        />
       </div>
     </DashboardLayout>
   )

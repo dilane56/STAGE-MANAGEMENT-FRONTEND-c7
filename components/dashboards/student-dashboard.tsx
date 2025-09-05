@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,96 +8,99 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, MapPin, Clock, Building2, Send, Eye, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { internshipService, type InternshipOffer } from "@/lib/internship-service"
+import { candidatureService, type Candidature } from "@/lib/candidature-service"
+import { ApplyModal } from "@/components/student/apply-modal"
+import { ViewInternshipModal } from "@/components/student/view-internship-modal"
+import { EditApplicationModal } from "@/components/student/edit-application-modal"
+import { ViewApplicationModal } from "@/components/student/view-application-modal"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
-interface Internship {
-  id: string
-  title: string
-  company: string
-  location: string
-  duration: string
-  description: string
-  skills: string[]
-  status?: "pending" | "accepted" | "rejected"
-  appliedDate?: string
-}
+
 
 export function StudentDashboard() {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+  const [availableInternships, setAvailableInternships] = useState<InternshipOffer[]>([])
+  const [myApplications, setMyApplications] = useState<Candidature[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isEditApplicationModalOpen, setIsEditApplicationModalOpen] = useState(false)
+  const [isViewApplicationModalOpen, setIsViewApplicationModalOpen] = useState(false)
+  const [selectedInternship, setSelectedInternship] = useState<InternshipOffer | null>(null)
+  const [selectedApplication, setSelectedApplication] = useState<Candidature | null>(null)
 
-  const availableInternships: Internship[] = [
-    {
-      id: "1",
-      title: "Développeur Full-Stack",
-      company: "TechCorp",
-      location: "Paris",
-      duration: "6 mois",
-      description: "Développement d'applications web avec React et Node.js",
-      skills: ["React", "Node.js", "TypeScript", "MongoDB"],
-    },
-    {
-      id: "2",
-      title: "Data Scientist",
-      company: "DataLab",
-      location: "Lyon",
-      duration: "4 mois",
-      description: "Analyse de données et machine learning",
-      skills: ["Python", "TensorFlow", "SQL", "Pandas"],
-    },
-    {
-      id: "3",
-      title: "Designer UX/UI",
-      company: "CreativeStudio",
-      location: "Bordeaux",
-      duration: "5 mois",
-      description: "Conception d'interfaces utilisateur modernes",
-      skills: ["Figma", "Adobe XD", "Prototyping", "User Research"],
-    },
-  ]
+  const loadInternships = async () => {
+    setIsLoading(true)
+    try {
+      const data = await internshipService.getAllInternships()
+      setAvailableInternships(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des offres:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  const myApplications: Internship[] = [
-    {
-      id: "1",
-      title: "Développeur Full-Stack",
-      company: "TechCorp",
-      location: "Paris",
-      duration: "6 mois",
-      description: "Développement d'applications web avec React et Node.js",
-      skills: ["React", "Node.js", "TypeScript", "MongoDB"],
-      status: "pending",
-      appliedDate: "2024-01-15",
-    },
-    {
-      id: "4",
-      title: "Développeur Mobile",
-      company: "MobileFirst",
-      location: "Lille",
-      duration: "6 mois",
-      description: "Développement d'applications mobiles React Native",
-      skills: ["React Native", "JavaScript", "Firebase"],
-      status: "accepted",
-      appliedDate: "2024-01-10",
-    },
-    {
-      id: "5",
-      title: "DevOps Engineer",
-      company: "CloudTech",
-      location: "Toulouse",
-      duration: "4 mois",
-      description: "Gestion d'infrastructure cloud et CI/CD",
-      skills: ["Docker", "Kubernetes", "AWS", "Jenkins"],
-      status: "rejected",
-      appliedDate: "2024-01-05",
-    },
-  ]
+  const loadMyApplications = async () => {
+    if (!user) return
+    try {
+      const data = await candidatureService.getMyApplications(user.id)
+      setMyApplications(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des candidatures:', error)
+    }
+  }
+
+  const handleApply = (internship: InternshipOffer) => {
+    setSelectedInternship(internship)
+    setIsApplyModalOpen(true)
+  }
+
+  const handleApplicationSent = () => {
+    loadMyApplications()
+    toast.success('Candidature envoyée avec succès!')
+  }
+
+  const handleDeleteApplication = async (candidatureId: number) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette candidature ?')) {
+      try {
+        await candidatureService.withdrawApplication(candidatureId)
+        loadMyApplications()
+        toast.success('Candidature supprimée avec succès!')
+      } catch (error: any) {
+        toast.error(error.message || 'Erreur lors de la suppression')
+      }
+    }
+  }
+
+  const handleEditApplication = (candidature: Candidature) => {
+    setSelectedApplication(candidature)
+    setIsEditApplicationModalOpen(true)
+  }
+
+  const handleApplicationUpdated = () => {
+    loadMyApplications()
+    toast.success('Candidature modifiée avec succès!')
+  }
+
+  useEffect(() => {
+    loadInternships()
+    if (user) {
+      loadMyApplications()
+    }
+  }, [user])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "accepted":
+      case "ACCEPTE":
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "rejected":
+      case "REFUSE":
         return <XCircle className="h-4 w-4 text-red-600" />
-      case "pending":
+      case "EN_ATTENTE":
         return <AlertCircle className="h-4 w-4 text-yellow-600" />
       default:
         return null
@@ -106,11 +109,11 @@ export function StudentDashboard() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "accepted":
+      case "ACCEPTE":
         return "Accepté"
-      case "rejected":
+      case "REFUSE":
         return "Refusé"
-      case "pending":
+      case "EN_ATTENTE":
         return "En attente"
       default:
         return status
@@ -119,11 +122,11 @@ export function StudentDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "accepted":
+      case "ACCEPTE":
         return "bg-green-100 text-green-800"
-      case "rejected":
+      case "REFUSE":
         return "bg-red-100 text-red-800"
-      case "pending":
+      case "EN_ATTENTE":
         return "bg-yellow-100 text-yellow-800"
       default:
         return "bg-gray-100 text-gray-800"
@@ -165,7 +168,7 @@ export function StudentDashboard() {
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {myApplications.filter((app) => app.status === "accepted").length}
+                    {myApplications.filter((app) => app.statutCandidature === "ACCEPTE").length}
                   </p>
                   <p className="text-sm text-muted-foreground">Acceptées</p>
                 </div>
@@ -179,7 +182,7 @@ export function StudentDashboard() {
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {myApplications.filter((app) => app.status === "pending").length}
+                    {myApplications.filter((app) => app.statutCandidature === "EN_ATTENTE").length}
                   </p>
                   <p className="text-sm text-muted-foreground">En attente</p>
                 </div>
@@ -226,24 +229,24 @@ export function StudentDashboard() {
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-xl font-semibold mb-2">{internship.title}</h3>
+                        <h3 className="text-xl font-semibold mb-2">{internship.intitule} {internship.secteurName && `(${internship.secteurName})`}</h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                           <div className="flex items-center gap-1">
                             <Building2 className="h-4 w-4" />
-                            {internship.company}
+                            {internship.nomEntreprise}
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
-                            {internship.location}
+                            {internship.localisation}
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            {internship.duration}
+                            {internship.dureeStage} mois
                           </div>
                         </div>
                         <p className="text-muted-foreground mb-3">{internship.description}</p>
                         <div className="flex flex-wrap gap-2">
-                          {internship.skills.map((skill) => (
+                          {internship.competences.map((skill) => (
                             <Badge key={skill} variant="secondary">
                               {skill}
                             </Badge>
@@ -251,11 +254,21 @@ export function StudentDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedInternship(internship)
+                            setIsViewModalOpen(true)
+                          }}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           Voir
                         </Button>
-                        <Button size="sm">
+                        <Button 
+                          size="sm"
+                          onClick={() => handleApply(internship)}
+                        >
                           <Send className="h-4 w-4 mr-2" />
                           Postuler
                         </Button>
@@ -275,37 +288,65 @@ export function StudentDashboard() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-semibold">{application.title}</h3>
-                          <Badge className={getStatusColor(application.status || "")}>
+                          <h3 className="text-xl font-semibold">{application.offreStage.intitule}</h3>
+                          <Badge className={getStatusColor(application.statutCandidature)}>
                             <div className="flex items-center gap-1">
-                              {getStatusIcon(application.status || "")}
-                              {getStatusLabel(application.status || "")}
+                              {getStatusIcon(application.statutCandidature)}
+                              {getStatusLabel(application.statutCandidature)}
                             </div>
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                           <div className="flex items-center gap-1">
                             <Building2 className="h-4 w-4" />
-                            {application.company}
+                            {application.offreStage.nomEntreprise}
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
-                            {application.location}
+                            {application.offreStage.localisation}
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            {application.duration}
+                            {application.offreStage.dureeStage} mois
                           </div>
                         </div>
-                        <p className="text-muted-foreground mb-3">{application.description}</p>
+                        <p className="text-muted-foreground mb-3">Secteur: {application.offreStage.secteur}</p>
                         <p className="text-sm text-muted-foreground">
-                          Candidature envoyée le {new Date(application.appliedDate || "").toLocaleDateString("fr-FR")}
+                          Candidature envoyée le {new Date(application.dateCandidature).toLocaleDateString("fr-FR")}
                         </p>
                       </div>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-2" />
-                        Détails
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedApplication(application)
+                            setIsViewApplicationModalOpen(true)
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Détails
+                        </Button>
+                        {application.statutCandidature === "EN_ATTENTE" && (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditApplication(application)}
+                            >
+                              Modifier
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteApplication(application.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Supprimer
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -313,6 +354,32 @@ export function StudentDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+        
+        <ApplyModal 
+          isOpen={isApplyModalOpen}
+          onClose={() => setIsApplyModalOpen(false)}
+          onApplicationSent={handleApplicationSent}
+          internship={selectedInternship}
+        />
+        
+        <ViewInternshipModal 
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          internship={selectedInternship}
+        />
+        
+        <EditApplicationModal 
+          isOpen={isEditApplicationModalOpen}
+          onClose={() => setIsEditApplicationModalOpen(false)}
+          onApplicationUpdated={handleApplicationUpdated}
+          candidature={selectedApplication}
+        />
+        
+        <ViewApplicationModal 
+          isOpen={isViewApplicationModalOpen}
+          onClose={() => setIsViewApplicationModalOpen(false)}
+          candidature={selectedApplication}
+        />
       </div>
     </DashboardLayout>
   )
