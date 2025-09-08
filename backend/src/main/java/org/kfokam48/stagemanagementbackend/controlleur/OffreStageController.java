@@ -42,12 +42,12 @@ public class OffreStageController {
     public ResponseEntity<List<OffreStageResponseDTO>> filterOffresStage(
             @RequestParam(required = false) String localisation,
             @RequestParam(required = false) Integer duree,
-            @RequestParam(required = false) String domaine) {
+            @RequestParam(required = false) String secteurNom) {
 
         List<OffreStageResponseDTO> offres = offreStageService.filterOffresStage(
                 localisation,
                 duree,
-                domaine);
+                secteurNom);
 
         return ResponseEntity.ok(offres);
     }

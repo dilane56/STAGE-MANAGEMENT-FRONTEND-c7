@@ -3,10 +3,9 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload } from "lucide-react"
+import { Plus } from "lucide-react"
 import { conventionService } from "@/lib/convention-service"
 import { type Candidature } from "@/lib/candidature-service"
 import { toast } from "sonner"
@@ -25,25 +24,23 @@ export function CreateConventionModal({
   acceptedApplications 
 }: CreateConventionModalProps) {
   const [selectedCandidatureId, setSelectedCandidatureId] = useState<string>("")
-  const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!selectedCandidatureId || !file) {
-      toast.error("Veuillez sélectionner une candidature et un fichier PDF")
+    if (!selectedCandidatureId) {
+      toast.error("Veuillez sélectionner une candidature")
       return
     }
 
     setIsLoading(true)
     try {
-      await conventionService.createConvention(parseInt(selectedCandidatureId), file)
-      toast.success("Convention créée avec succès!")
+      await conventionService.createConvention(parseInt(selectedCandidatureId))
+      toast.success("Convention créée avec succès! Vous pouvez maintenant télécharger le PDF.")
       onConventionCreated()
       onClose()
       setSelectedCandidatureId("")
-      setFile(null)
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la création de la convention")
     } finally {
@@ -51,14 +48,7 @@ export function CreateConventionModal({
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile)
-    } else {
-      toast.error("Veuillez sélectionner un fichier PDF")
-    }
-  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -84,22 +74,10 @@ export function CreateConventionModal({
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="pdf">Fichier PDF de la convention</Label>
-            <div className="mt-1">
-              <Input
-                id="pdf"
-                type="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
-            </div>
-            {file && (
-              <p className="text-sm text-green-600 mt-1">
-                Fichier sélectionné: {file.name}
-              </p>
-            )}
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800">
+              La convention sera générée automatiquement après création. Vous pourrez ensuite télécharger le PDF.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -107,7 +85,7 @@ export function CreateConventionModal({
               Annuler
             </Button>
             <Button type="submit" disabled={isLoading}>
-              <Upload className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-2" />
               {isLoading ? "Création..." : "Créer"}
             </Button>
           </div>

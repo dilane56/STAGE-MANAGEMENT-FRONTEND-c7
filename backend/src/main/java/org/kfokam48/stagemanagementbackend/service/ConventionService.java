@@ -10,11 +10,13 @@ import java.util.List;
 
 public interface ConventionService {
     public ConventionResponseDTO findByConventionId(Long conventionId);
-    ConventionResponseDTO createConvention(ConventionRequestDTO conventionRequestDTO, MultipartFile file) throws Exception;
-    ConventionResponseDTO updateConvention(ConventionRequestDTO conventionRequestDTO, Long conventionId, MultipartFile file) throws Exception;
+    ConventionResponseDTO createConvention(ConventionRequestDTO conventionRequestDTO) throws Exception;
+    ConventionResponseDTO updateConvention(Long conventionId, Long idCandidature) throws Exception;
     public String deleteConvention(Long conventionId);
     public List<ConventionResponseDTO> findAllConventions();
+    public List<ConventionResponseDTO> findConventionsByEntreprise(Long entrepriseId);
+    public List<ConventionResponseDTO> findConventionsByEnseignant(Long enseignantId);
     ConventionResponseDTO validateConventionByEnseignant(Long enseigantId, Long conventionId) throws IOException;
     ConventionResponseDTO approuveConventionByAdministrator(Long administratorId, Long conventionId) throws IOException;
-    ResponseEntity<byte[]> downloadConvention(Long conventionId) throws Exception;
+    ResponseEntity<byte[]> generateConventionPdf(Long conventionId) throws Exception;
 }

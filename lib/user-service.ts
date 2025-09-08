@@ -104,7 +104,7 @@ export const userService = {
     fullName: string
     telephone?: string
     universite: string
-    specialite?: string
+    filiere?: string
     grade?: string
     departement?: string
   }) {
@@ -180,7 +180,7 @@ export const userService = {
     fullName: string
     telephone?: string
     universite: string
-    specialite?: string
+    filiere?: string
     grade?: string
     departement?: string
   }) {
@@ -205,6 +205,16 @@ export const userService = {
     if (!response.ok) {
       const error = await response.json()
       throw new Error(error.message || 'Erreur lors de la mise à jour de l\'administrateur')
+    }
+    
+    return await response.json()
+  },
+
+  async getStudentsByTeacher(enseignantId: number): Promise<BackendUser[]> {
+    const response = await apiService.get(`/api/etudiants/enseignant/${enseignantId}`)
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des étudiants')
     }
     
     return await response.json()

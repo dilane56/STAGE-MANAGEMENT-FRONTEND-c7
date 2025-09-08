@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { X } from "lucide-react"
 import { userService } from "@/lib/user-service"
+import { toast } from "sonner"
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -32,7 +33,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
     description: "",
     dateCreation: "",
     // Enseignant
-    specialite: "",
+    filiere: "",
     grade: "",
     departement: ""
   })
@@ -79,7 +80,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
             fullName: formData.fullName,
             telephone: formData.telephone || undefined,
             universite: formData.universite,
-            specialite: formData.specialite || undefined,
+            filiere: formData.filiere || undefined,
             grade: formData.grade || undefined,
             departement: formData.departement || undefined
           })
@@ -96,6 +97,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
           throw new Error("Veuillez sélectionner un rôle")
       }
 
+      toast.success("Utilisateur créé avec succès!")
       onUserCreated()
       onClose()
       setFormData({
@@ -111,13 +113,14 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
         siteWeb: "",
         description: "",
         dateCreation: "",
-        specialite: "",
+        filiere: "",
         grade: "",
         departement: ""
       })
       setSelectedRole("")
     } catch (error: any) {
       setError(error.message)
+      toast.error(error.message || "Erreur lors de la création")
     } finally {
       setIsLoading(false)
     }
@@ -222,11 +225,11 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="specialite">Spécialité</Label>
+              <Label htmlFor="filiere">Filière</Label>
               <Input
-                id="specialite"
-                value={formData.specialite}
-                onChange={(e) => setFormData({ ...formData, specialite: e.target.value })}
+                id="filiere"
+                value={formData.filiere}
+                onChange={(e) => setFormData({ ...formData, filiere: e.target.value })}
               />
             </div>
             <div className="space-y-2">

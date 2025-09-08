@@ -84,6 +84,8 @@ public class CandidatureServiceImpl implements CandidatureService {
         }
         
         candidatureRepository.save(candidature);
+        Long entrepriseId = candidature.getOffreStage().getEntreprise().getId();
+        notificationController.sendNotification(entrepriseId, "Candidature mise à jour", "Une candidature a été mise à jour", false);
         return candidatureMapper.candidatureToCandidatureResponseDTO(candidature);
     }
 
@@ -115,6 +117,8 @@ public class CandidatureServiceImpl implements CandidatureService {
 
         // ✅ 3. Enregistrer la candidature avec l’URL du CV
         candidatureRepository.save(candidature);
+        Long entrepriseId = candidature.getOffreStage().getEntreprise().getId();
+        notificationController.sendNotification(entrepriseId, "Nouvelle candidature", "Une nouvelle candidature a été postulée à votre offre", false);
 
         return candidatureMapper.candidatureToCandidatureResponseDTO(candidature);
     }
@@ -130,7 +134,7 @@ public class CandidatureServiceImpl implements CandidatureService {
         candidatureRepository.save(candidature);
 
         // Envoi d'une notification en temps réel via WebSocket
-        notificationController.sendNotification(candidature.getEtudiant().getId(), "Statut de la candidature", "Votre candidature a été " + statut, true);
+        notificationController.sendNotification(candidature.getEtudiant().getId(), "Statut de la candidature", "Votre candidature a été " + statut, false);
 
 
         return ResponseEntity.ok("Statut de la candidature mis à jour avec succès");

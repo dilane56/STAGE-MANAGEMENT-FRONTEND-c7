@@ -26,7 +26,6 @@ public class ConventionStage {
     @JoinColumn(name = "administrateur_id", nullable = true)
     private Administrateur aprouvalAdministrator;
     @Column(length = 500)
-    private String pdfConventionPath;
     private StatutConvention statutConvention;
     private LocalDate dateDebut;
     private LocalDate dateFin;
@@ -35,6 +34,7 @@ public class ConventionStage {
     private LocalDate DateValidation;
     private LocalDate DateAprouval;
     private String commentaire;
+
 
 
 }

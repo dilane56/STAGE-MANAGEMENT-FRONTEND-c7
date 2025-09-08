@@ -9,10 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
-import { Users, Building2, FileText, TrendingUp, Plus, Eye, Settings, Download, Search, Trash2, Tag } from "lucide-react"
+import { Users, Building2, FileText, TrendingUp, Plus, Eye, Settings, Download, Search, Trash2, Tag, MapPin, Clock, CheckCircle } from "lucide-react"
 import { userService, type BackendUser } from "@/lib/user-service"
 import { statsService, type AdminStats } from "@/lib/stats-service"
 import { secteurService, type Secteur } from "@/lib/secteur-service"
+import { internshipService, type InternshipOffer } from "@/lib/internship-service"
+import { conventionService, type Convention } from "@/lib/convention-service"
+import { ViewConventionModal } from "@/components/admin/view-convention-modal"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
+import { reportsService } from "@/lib/reports-service"
 import { CreateUserModal } from "@/components/admin/create-user-modal"
 import { ViewUserModal } from "@/components/admin/view-user-modal"
 import { EditUserModal } from "@/components/admin/edit-user-modal"
@@ -58,6 +64,13 @@ export function AdminDashboard() {
   const [isCreateSecteurModalOpen, setIsCreateSecteurModalOpen] = useState(false)
   const [selectedSecteur, setSelectedSecteur] = useState<Secteur | null>(null)
   const [isEditSecteurModalOpen, setIsEditSecteurModalOpen] = useState(false)
+  const [internships, setInternships] = useState<InternshipOffer[]>([])
+  const [conventions, setConventions] = useState<Convention[]>([])
+  const [isLoadingInternships, setIsLoadingInternships] = useState(false)
+  const [isLoadingConventions, setIsLoadingConventions] = useState(false)
+  const [selectedConvention, setSelectedConvention] = useState<Convention | null>(null)
+  const [isViewConventionModalOpen, setIsViewConventionModalOpen] = useState(false)
+  const { user } = useAuth()
 
   const loadUsers = async () => {
     setIsLoading(true)
@@ -83,10 +96,122 @@ export function AdminDashboard() {
     }
   }
 
+  const loadInternships = async () => {
+    setIsLoadingInternships(true)
+    try {
+      const data = await internshipService.getAllInternships()
+      setInternships(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des offres:', error)
+    } finally {
+      setIsLoadingInternships(false)
+    }
+  }
+
+  const loadConventions = async () => {
+    setIsLoadingConventions(true)
+    try {
+      const data = await conventionService.getAllConventions()
+      setConventions(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des conventions:', error)
+    } finally {
+      setIsLoadingConventions(false)
+    }
+  }
+
+  const handleApproveConvention = async (conventionId: number) => {
+    if (!user) return
+    try {
+      await conventionService.approveConventionByAdmin(conventionId, user.id)
+      toast.success('Convention approuvée avec succès!')
+      loadConventions()
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'approbation')
+    }
+  }
+
+  // Fonctions pour les rapports
+  const handleExportStagesByFiliere = async () => {
+    try {
+      const blob = await reportsService.exportStagesByFiliere()
+      reportsService.downloadFile(blob, `stages-par-filiere-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Export réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export')
+    }
+  }
+
+  const handleExportActiveUsers = async () => {
+    try {
+      const blob = await reportsService.exportActiveUsers()
+      reportsService.downloadFile(blob, `utilisateurs-actifs-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Export réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export')
+    }
+  }
+
+  const handleExportCompanyPartners = async () => {
+    try {
+      const blob = await reportsService.exportCompanyPartners()
+      reportsService.downloadFile(blob, `partenaires-entreprises-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Export réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export')
+    }
+  }
+
+
+
+  const handleExportStages2024 = async () => {
+    try {
+      const blob = await reportsService.exportStagesByYear(2024)
+      reportsService.downloadFile(blob, 'stages-2024.xlsx')
+      toast.success('Export réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export')
+    }
+  }
+
+  const handleExportSignedConventions = async () => {
+    try {
+      const blob = await reportsService.exportSignedConventions()
+      reportsService.downloadFile(blob, `conventions-signees-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Export réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export')
+    }
+  }
+
+  const handleExportAllUsers = async () => {
+    try {
+      const blob = await reportsService.exportAllUsers()
+      reportsService.downloadFile(blob, `tous-utilisateurs-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Export réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export')
+    }
+  }
+
+
+
+  const handleExportAll = async () => {
+    try {
+      const blob = await reportsService.exportAllData()
+      reportsService.downloadFile(blob, `export-complet-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Export complet réussi!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'export complet')
+    }
+  }
+
   useEffect(() => {
     loadUsers()
     loadStats()
     loadSecteurs()
+    loadInternships()
+    loadConventions()
   }, [])
 
   const loadStats = async () => {
@@ -102,10 +227,11 @@ export function AdminDashboard() {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
       try {
         await userService.deleteUser(userId)
+        toast.success('Utilisateur supprimé avec succès!')
         loadUsers()
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erreur lors de la suppression:', error)
-        alert('Erreur lors de la suppression de l\'utilisateur')
+        toast.error(error.message || 'Erreur lors de la suppression de l\'utilisateur')
       }
     }
   }
@@ -114,10 +240,11 @@ export function AdminDashboard() {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce secteur ?')) {
       try {
         await secteurService.deleteSecteur(secteurId)
+        toast.success('Secteur supprimé avec succès!')
         loadSecteurs()
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erreur lors de la suppression:', error)
-        alert('Erreur lors de la suppression du secteur')
+        toast.error(error.message || 'Erreur lors de la suppression du secteur')
       }
     }
   }
@@ -210,50 +337,14 @@ export function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="offers">Offres</TabsTrigger>
+            <TabsTrigger value="conventions">Conventions</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
             <TabsTrigger value="reports">Rapports</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Stages par filière */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Répartition par filière</CardTitle>
-                  <CardDescription>Distribution des stages par domaine d'études</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      value: {
-                        label: "Stages",
-                        color: "hsl(var(--chart-1))",
-                      },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={internshipsByField}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {internshipsByField.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
               {/* Évolution mensuelle */}
               <Card>
                 <CardHeader>
@@ -417,6 +508,149 @@ export function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="offers" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Toutes les offres de stage</h2>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Liste des offres ({internships.length})</CardTitle>
+                <CardDescription>Consultation de toutes les offres de stage publiées</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingInternships ? (
+                  <div className="text-center py-8">Chargement...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {internships.map((offer) => (
+                      <div key={offer.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-semibold">{offer.intitule}</h3>
+                            <p className="text-sm text-muted-foreground">{offer.nomEntreprise}</p>
+                          </div>
+                          <Badge variant="secondary">{offer.secteurName || 'Non défini'}</Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {offer.localisation}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {offer.dureeStage} mois
+                          </div>
+                          <span>Places: {offer.nombrePlaces}</span>
+                        </div>
+                        <p className="text-sm mb-2">{offer.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {offer.competences.map((skill, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
+                          <span>Publié le {new Date(offer.datePublication).toLocaleDateString("fr-FR")}</span>
+                          <span>Limite: {new Date(offer.dateLimiteCandidature).toLocaleDateString("fr-FR")}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {internships.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Aucune offre de stage trouvée.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="conventions" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Toutes les conventions</h2>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Liste des conventions ({conventions.length})</CardTitle>
+                <CardDescription>Consultation de toutes les conventions de stage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingConventions ? (
+                  <div className="text-center py-8">Chargement...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {conventions.map((convention) => (
+                      <div key={convention.idConvention} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-semibold">{convention.candidature.etudiantUsername}</h3>
+                            <p className="text-sm text-muted-foreground">{convention.candidature.offreStage.intitule}</p>
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-800">
+                            <FileText className="h-3 w-3 mr-1" />
+                            Convention
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">Secteur: {convention.candidature.offreStage.secteur}</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Créée le {new Date(convention.dateCreation).toLocaleDateString("fr-FR")}
+                        </p>
+                        <div className="flex gap-2">
+                          <Badge key={`enseignant-${convention.idConvention}`} className={convention.enseignantName ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            Enseignant: {convention.enseignantName ? 'Validé' : 'En attente'}
+                          </Badge>
+                          <Badge key={`admin-${convention.idConvention}`} className={convention.administratorName ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            Admin: {convention.administratorName ? 'Approuvé' : 'En attente'}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedConvention(convention)
+                              setIsViewConventionModalOpen(true)
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Détails
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => conventionService.downloadConvention(convention.idConvention)}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Télécharger
+                          </Button>
+                          {convention.enseignantName && !convention.administratorName && (
+                            <Button 
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleApproveConvention(convention.idConvention)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approuver
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {conventions.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Aucune convention trouvée.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="secteurs" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Gestion des secteurs</h2>
@@ -483,7 +717,7 @@ export function AdminDashboard() {
           <TabsContent value="reports" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Rapports et exports</h2>
-              <Button>
+              <Button onClick={handleExportAll}>
                 <Download className="h-4 w-4 mr-2" />
                 Exporter tout
               </Button>
@@ -496,22 +730,19 @@ export function AdminDashboard() {
                   <CardDescription>Générez des rapports détaillés</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportStagesByFiliere}>
                     <FileText className="h-4 w-4 mr-2" />
                     Rapport des stages par filière
                   </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportActiveUsers}>
                     <Users className="h-4 w-4 mr-2" />
                     Liste des utilisateurs actifs
                   </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportCompanyPartners}>
                     <Building2 className="h-4 w-4 mr-2" />
                     Partenaires entreprises
                   </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Statistiques de performance
-                  </Button>
+
                 </CardContent>
               </Card>
 
@@ -521,19 +752,19 @@ export function AdminDashboard() {
                   <CardDescription>Téléchargez les données au format Excel</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportStages2024}>
                     <Download className="h-4 w-4 mr-2" />
                     Export stages 2024
                   </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportSignedConventions}>
                     <Download className="h-4 w-4 mr-2" />
                     Export conventions signées
                   </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportAllUsers}>
                     <Download className="h-4 w-4 mr-2" />
                     Export utilisateurs
                   </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                  <Button className="w-full justify-start bg-transparent" variant="outline" onClick={handleExportCompanyPartners}>
                     <Download className="h-4 w-4 mr-2" />
                     Export entreprises partenaires
                   </Button>
@@ -573,6 +804,13 @@ export function AdminDashboard() {
           onClose={() => setIsEditSecteurModalOpen(false)}
           onSecteurUpdated={loadSecteurs}
           secteur={selectedSecteur}
+        />
+        
+        <ViewConventionModal 
+          isOpen={isViewConventionModalOpen}
+          onClose={() => setIsViewConventionModalOpen(false)}
+          convention={selectedConvention}
+          onApprove={handleApproveConvention}
         />
       </div>
     </DashboardLayout>

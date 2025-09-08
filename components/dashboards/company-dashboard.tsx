@@ -14,6 +14,7 @@ import { CreateInternshipModal } from "@/components/company/create-internship-mo
 import { ViewInternshipModal } from "@/components/company/view-internship-modal"
 import { ViewApplicationModal } from "@/components/company/view-application-modal"
 import { CreateConventionModal } from "@/components/company/create-convention-modal"
+import { ChatInterface } from "@/components/company/chat-interface"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
@@ -215,6 +216,7 @@ export function CompanyDashboard() {
             <TabsTrigger value="offers">Mes offres</TabsTrigger>
             <TabsTrigger value="applications">Candidatures</TabsTrigger>
             <TabsTrigger value="conventions">Conventions</TabsTrigger>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
           </TabsList>
 
           <TabsContent value="offers" className="space-y-6">
@@ -428,33 +430,7 @@ export function CompanyDashboard() {
                             <Download className="h-4 w-4 mr-2" />
                             Télécharger
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const input = document.createElement('input')
-                              input.type = 'file'
-                              input.accept = '.pdf'
-                              input.onchange = async (e) => {
-                                const file = (e.target as HTMLInputElement).files?.[0]
-                                if (file) {
-                                  try {
-                                    console.log('Convention ID:', convention.idConvention, 'Candidature ID:', convention.candidature.id)
-                                    await conventionService.updateConvention(convention.idConvention, convention.candidature.id, file)
-                                    toast.success('Convention mise à jour!')
-                                    loadConventions()
-                                  } catch (error: any) {
-                                    console.error('Erreur mise à jour convention:', error)
-                                    toast.error(error.message || 'Erreur lors de la mise à jour')
-                                  }
-                                }
-                              }
-                              input.click()
-                            }}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Modifier
-                          </Button>
+
                           {(!convention.enseignantName && !convention.administratorName) && (
                             <Button 
                               variant="outline" 
@@ -488,6 +464,11 @@ export function CompanyDashboard() {
                 )}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="chat" className="space-y-6">
+            <h2 className="text-2xl font-bold">Chat avec les candidats</h2>
+            <ChatInterface />
           </TabsContent>
         </Tabs>
         

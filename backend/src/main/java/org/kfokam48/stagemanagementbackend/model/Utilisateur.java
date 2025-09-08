@@ -5,6 +5,7 @@ import org.kfokam48.stagemanagementbackend.enums.Roles;
 import org.kfokam48.stagemanagementbackend.enums.UserStatus;
 import org.kfokam48.stagemanagementbackend.model.embeded.Profile;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Data
@@ -25,6 +26,8 @@ public abstract class Utilisateur {
     private String avatar;
     private LocalDate createAt;
     private LocalDate updateAt;
+    // La date et l'heure de la dernière connexion
+    private Instant derniereConnexion;
 
     @Enumerated(EnumType.STRING)
     private Roles role;

@@ -5,7 +5,7 @@ import org.kfokam48.stagemanagementbackend.dto.utilisateur.UtilisateurResponseDT
 
 @Data
 public class EnseignantResponseDTO extends UtilisateurResponseDTO {
-    private String specialite;
+    private String filiere;
     private String grade;
     private String departement;
     private String universite;

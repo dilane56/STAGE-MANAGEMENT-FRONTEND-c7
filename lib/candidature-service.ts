@@ -3,6 +3,7 @@ import { type InternshipOffer } from './internship-service'
 
 export interface Candidature {
   id: number
+  etudiantId: number
   etudiantUsername: string
   offreStage: {
     id: number

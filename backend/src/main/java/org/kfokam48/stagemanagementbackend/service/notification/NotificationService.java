@@ -62,4 +62,22 @@ public class NotificationService {
             notificationRepository.save(n);
         });
     }
+
+    public void markAllAsReadByUserId(Long userId) {
+        List<Notification> notifications = notificationRepository.findByDestinataireIdOrderByDateEnvoiDesc(userId);
+        notifications.forEach(n -> n.setLu(true));
+        notificationRepository.saveAll(notifications);
+    }
+
+    public int getNumberOfNotReadNotificationByUserId(Long userId){
+        List<Notification> notifications = notificationRepository.findByDestinataireIdOrderByDateEnvoiDesc(userId);
+        int number =0;
+        for( Notification notification : notifications){
+            if(!notification.getLu()){
+                number++;
+            }
+
+        }
+        return number;
+    }
 }

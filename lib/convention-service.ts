@@ -27,18 +27,9 @@ export const conventionService = {
     return data
   },
 
-  async createConvention(candidatureId: number, file: File): Promise<Convention> {
-    const formData = new FormData()
-    formData.append('candidature-id', candidatureId.toString())
-    formData.append('pdf', file)
-
-    const token = localStorage.getItem('token')
-    const response = await fetch('http://localhost:9001/api/conventions/ajouter', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
+  async createConvention(candidatureId: number): Promise<Convention> {
+    const response = await apiService.post('/api/conventions', {
+      idCandidature: candidatureId
     })
     
     if (!response.ok) {
@@ -50,22 +41,13 @@ export const conventionService = {
     return data
   },
 
-  async updateConvention(idConvention: number, candidatureId: number, file: File): Promise<Convention> {
+  async updateConvention(idConvention: number, candidatureId: number): Promise<Convention> {
     if (!idConvention || idConvention === undefined) {
       throw new Error('ID de convention manquant')
     }
     
-    const formData = new FormData()
-    formData.append('candidature-id', candidatureId.toString())
-    formData.append('pdf', file)
-
-    const token = localStorage.getItem('token')
-    const response = await fetch(`http://localhost:9001/api/conventions/${idConvention}/modifier`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
+    const response = await apiService.put(`/api/conventions/${idConvention}`, {
+      idCandidature: candidatureId
     })
     
     if (!response.ok) {
@@ -84,7 +66,7 @@ export const conventionService = {
   },
 
   async downloadConvention(idConvention: number): Promise<void> {
-    const response = await apiService.get(`/api/conventions/${idConvention}/download`)
+    const response = await apiService.get(`/api/conventions/${idConvention}/generate-pdf`)
     const blob = await response.blob()
     
     const url = window.URL.createObjectURL(blob)
@@ -95,5 +77,29 @@ export const conventionService = {
     link.click()
     link.remove()
     window.URL.revokeObjectURL(url)
+  },
+
+  async getAllConventions(): Promise<Convention[]> {
+    const response = await apiService.get('/api/conventions')
+    const data = await response.json()
+    return data
+  },
+
+  async approveConventionByAdmin(conventionId: number, adminId: number): Promise<Convention> {
+    const response = await apiService.put(`/api/conventions/${conventionId}/approuver-administrateur/${adminId}`, {})
+    const data = await response.json()
+    return data
+  },
+
+  async getConventionsByTeacher(enseignantId: number): Promise<Convention[]> {
+    const response = await apiService.get(`/api/conventions/enseignant/${enseignantId}`)
+    const data = await response.json()
+    return data
+  },
+
+  async validateConventionByTeacher(conventionId: number, enseignantId: number): Promise<Convention> {
+    const response = await apiService.put(`/api/conventions/${conventionId}/valider-enseignant/${enseignantId}`, {})
+    const data = await response.json()
+    return data
   }
 }

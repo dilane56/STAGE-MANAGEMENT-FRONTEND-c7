@@ -46,6 +46,7 @@ public class CandidatureMapper {
         candidatureResponseDTO.setMessageReponse(candidature.getMessageReponse());
         candidatureResponseDTO.setOffreStage(offreStageToOffreStageInCandidatureDTO(candidature));
         candidatureResponseDTO.setCheminFichier(candidature.getCvPath());
+        candidatureResponseDTO.setEtudiantId(candidature.getEtudiant().getId());
         return candidatureResponseDTO;
 
     }

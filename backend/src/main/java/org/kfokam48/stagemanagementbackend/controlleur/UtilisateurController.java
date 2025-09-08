@@ -27,15 +27,16 @@ public class UtilisateurController {
         return ResponseEntity.ok(utilisateur);
     }
 
-
-
-    // ✅ Récupérer un utilisateur par email
     @GetMapping("/email/{email}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('ETUDIANT') or hasRole('ENTREPRISE') or hasRole('ENSEIGNANT')")
     public ResponseEntity<UtilisateurResponseDTO> getUtilisateurByEmail(@PathVariable String email) {
         UtilisateurResponseDTO utilisateur = utilisateurService.getUtilisateurByEmail(email);
         return ResponseEntity.ok(utilisateur);
     }
+
+
+
+
 
     // ✅ Récupérer la liste des utilisateurs
     @GetMapping

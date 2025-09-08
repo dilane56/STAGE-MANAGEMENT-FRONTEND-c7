@@ -1,5 +1,6 @@
 package org.kfokam48.stagemanagementbackend.service.impl;
 
+import org.kfokam48.stagemanagementbackend.controlleur.notification.NotificationController;
 import org.kfokam48.stagemanagementbackend.dto.offreStage.OffreStageDTO;
 import org.kfokam48.stagemanagementbackend.dto.offreStage.OffreStageResponseDTO;
 import org.kfokam48.stagemanagementbackend.exception.RessourceNotFoundException;
@@ -23,12 +24,14 @@ public class OffreStageServiceImpl implements OffreStageService {
     private final OffreStageMapper offreStageMapper;
     private final EntrepriseRepository entrepriseRepository;
     private final SecteurRepository secteurRepository;
+    private final NotificationController notificationController;
 
-    public OffreStageServiceImpl(OffreStageRepository offreStageRepository, OffreStageMapper offreStageMapper, EntrepriseRepository entrepriseRepository, SecteurRepository secteurRepository) {
+    public OffreStageServiceImpl(OffreStageRepository offreStageRepository, OffreStageMapper offreStageMapper, EntrepriseRepository entrepriseRepository, SecteurRepository secteurRepository, NotificationController notificationController) {
         this.offreStageRepository = offreStageRepository;
         this.offreStageMapper = offreStageMapper;
         this.entrepriseRepository = entrepriseRepository;
         this.secteurRepository = secteurRepository;
+        this.notificationController = notificationController;
     }
 
     @Override
@@ -51,14 +54,29 @@ public class OffreStageServiceImpl implements OffreStageService {
     public OffreStageResponseDTO createOffreStage(OffreStageDTO offreStageDTO) {
         OffreStage offreStage = offreStageMapper.offreStageDTOToOffreStage(offreStageDTO);
         offreStage.setDatePublication(LocalDate.now());
-        return offreStageMapper.offreStageToOffreStageResponseDTO(offreStageRepository.save(offreStage));
+        offreStageRepository.save(offreStage);
+        Long adminId = 1L;
+        notificationController.sendNotification(adminId, "Nouvelle offre de stage", "une nouvelle offre de stage a ete ajouter",false);
+        return offreStageMapper.offreStageToOffreStageResponseDTO(offreStage);
     }
+
     @Override
-    public List<OffreStageResponseDTO> filterOffresStage(String localisation, Integer duree, String domaine) {
-        List<OffreStage> offres = offreStageRepository.filtrer(localisation, duree, domaine);
+    public List<OffreStageResponseDTO> filterOffresStage(String localisation, Integer duree, String secteurNom) {
+        if(localisation!=null){
+
+            localisation = localisation.toLowerCase();
+        }
+        if(secteurNom!=null){
+            secteurNom = secteurNom.toLowerCase();
+        }
+//        String localisationLower = localisation != null ? localisation.toLowerCase() : null;
+//        String secteurNomLower = secteurNom != null ? secteurNom.toLowerCase() : null;
+//
+        List<OffreStage> offres = offreStageRepository.filtrer(localisation, duree, secteurNom);
 
         return offreStageMapper.offresStageToOffresStageResponseDTOs(offres);
     }
+
 
     @Override
     public OffreStageResponseDTO updateOffreStage(Long id, OffreStageDTO offreStageDTO) {

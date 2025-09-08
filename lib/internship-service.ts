@@ -90,10 +90,11 @@ export const internshipService = {
     }
   },
 
-  async filterInternships(localisation?: string, duree?: number): Promise<InternshipOffer[]> {
+  async filterInternships(localisation?: string, duree?: number, secteurNom?: string): Promise<InternshipOffer[]> {
     const params = new URLSearchParams()
     if (localisation) params.append('localisation', localisation)
     if (duree) params.append('duree', duree.toString())
+    if (secteurNom) params.append('secteurNom', secteurNom)
     
     const response = await apiService.get(`/api/offres-stage/filtrer?${params}`)
     

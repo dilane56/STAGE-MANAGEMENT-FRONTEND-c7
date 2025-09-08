@@ -63,4 +63,11 @@ public class EtudiantController {
         List<EtudiantResponseDTO> etudiants = etudiantService.getAllEtudiants();
         return ResponseEntity.ok(etudiants);
     }
+
+    @GetMapping("/enseignant/{enseignantId}")
+    @PreAuthorize("hasRole('ENSEIGNANT') or hasRole('ADMIN')")
+    public ResponseEntity<List<EtudiantResponseDTO>> getEtudiantsByEnseignant(@PathVariable Long enseignantId) {
+        List<EtudiantResponseDTO> etudiants = etudiantService.getEtudiantsByEnseignant(enseignantId);
+        return ResponseEntity.ok(etudiants);
+    }
 }

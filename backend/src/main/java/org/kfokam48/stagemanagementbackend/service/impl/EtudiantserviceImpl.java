@@ -6,8 +6,10 @@ import org.kfokam48.stagemanagementbackend.dto.etudiant.EtudiantUpdateDTO;
 import org.kfokam48.stagemanagementbackend.enums.Roles;
 import org.kfokam48.stagemanagementbackend.exception.RessourceNotFoundException;
 import org.kfokam48.stagemanagementbackend.mapper.EtudiantMapper;
+import org.kfokam48.stagemanagementbackend.model.Enseignant;
 import org.kfokam48.stagemanagementbackend.model.Etudiant;
 import org.kfokam48.stagemanagementbackend.model.embeded.Profile;
+import org.kfokam48.stagemanagementbackend.repository.EnseignantRepository;
 import org.kfokam48.stagemanagementbackend.repository.EtudiantRepository;
 import org.kfokam48.stagemanagementbackend.repository.UtilisateurRepository;
 import org.kfokam48.stagemanagementbackend.service.Etudiantservice;
@@ -25,14 +27,16 @@ public class EtudiantserviceImpl implements Etudiantservice {
     private final EtudiantRepository etudiantRepository;
     private final EtudiantMapper etudiantMapper;
     private final UtilisateurRepository utilisateurRepository;
+    private final EnseignantRepository enseignantRepository;
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    public EtudiantserviceImpl(EtudiantRepository etudiantRepository, EtudiantMapper etudiantMapper, UtilisateurRepository utilisateurRepository) {
+    public EtudiantserviceImpl(EtudiantRepository etudiantRepository, EtudiantMapper etudiantMapper, UtilisateurRepository utilisateurRepository, EnseignantRepository enseignantRepository) {
         this.etudiantRepository = etudiantRepository;
         this.etudiantMapper = etudiantMapper;
         this.utilisateurRepository = utilisateurRepository;
+        this.enseignantRepository = enseignantRepository;
     }
 
     @Override
@@ -65,6 +69,15 @@ public class EtudiantserviceImpl implements Etudiantservice {
     @Override
     public List<EtudiantResponseDTO> getAllEtudiants() {
         return etudiantMapper.etudiantsToEtudiantResponseDTOs(etudiantRepository.findAll());
+    }
+
+    @Override
+    public List<EtudiantResponseDTO> getEtudiantsByEnseignant(Long enseignantId) {
+        Enseignant enseignant = enseignantRepository.findById(enseignantId)
+                .orElseThrow(() -> new RessourceNotFoundException("Enseignant introuvable avec l'ID: " + enseignantId));
+        
+        List<Etudiant> etudiants = etudiantRepository.findByFiliere(enseignant.getFiliere());
+        return etudiantMapper.etudiantsToEtudiantResponseDTOs(etudiants);
     }
 
     @Override

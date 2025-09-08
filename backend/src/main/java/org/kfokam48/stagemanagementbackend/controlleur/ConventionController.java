@@ -5,7 +5,6 @@ import org.kfokam48.stagemanagementbackend.service.ConventionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -27,28 +26,21 @@ public class ConventionController {
         return ResponseEntity.ok(convention);
     }
 
-    // ✅ Ajouter une nouvelle convention avec upload du PDF
-    @PostMapping(value = "/ajouter", consumes = "multipart/form-data")
+    // ✅ Ajouter une nouvelle convention
+    @PostMapping
     @PreAuthorize("hasRole('ENTREPRISE') or hasRole('ADMIN')")
     public ResponseEntity<ConventionResponseDTO> createConvention(
-            @RequestParam("candidature-id") Long idCandidature,
-            @RequestParam("pdf") MultipartFile file) throws Exception {
-        ConventionRequestDTO conventionRequestDTO = new ConventionRequestDTO();
-        conventionRequestDTO.setIdCandidature(idCandidature);
-        ConventionResponseDTO convention = conventionService.createConvention(conventionRequestDTO, file);
-        return ResponseEntity.ok(convention);
+            @RequestBody ConventionRequestDTO conventionRequestDTO) throws Exception {
+        return ResponseEntity.ok(conventionService.createConvention(conventionRequestDTO));
     }
 
-    // ✅ Mettre à jour une convention avec un nouveau fichier PDF
-    @PutMapping(value = "/{id}/modifier", consumes = "multipart/form-data")
+    // ✅ Mettre à jour une convention
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ENTREPRISE') or hasRole('ADMIN') or hasRole('ENSEIGNANT')")
     public ResponseEntity<ConventionResponseDTO> updateConvention(
             @PathVariable Long id,
-            @RequestParam("candidature-id") Long CandidatureId,
-            @RequestParam("pdf") MultipartFile file) throws Exception {
-        ConventionRequestDTO conventionRequestDTO = new ConventionRequestDTO();
-        conventionRequestDTO.setIdCandidature(id);
-        ConventionResponseDTO convention = conventionService.updateConvention(conventionRequestDTO, id, file);
+            @RequestParam("candidature-id") Long idCandidature) throws Exception {
+        ConventionResponseDTO convention = conventionService.updateConvention(id, idCandidature);
         return ResponseEntity.ok(convention);
     }
 
@@ -65,6 +57,20 @@ public class ConventionController {
     @PreAuthorize("hasRole('ENTREPRISE') or hasRole('ADMIN') or hasRole('ENSEIGNANT')")
     public ResponseEntity<List<ConventionResponseDTO>> findAllConventions() {
         List<ConventionResponseDTO> conventions = conventionService.findAllConventions();
+        return ResponseEntity.ok(conventions);
+    }
+
+    @GetMapping("/entreprise/{entrepriseId}")
+    @PreAuthorize("hasRole('ENTREPRISE') or hasRole('ADMIN')")
+    public ResponseEntity<List<ConventionResponseDTO>> findConventionsByEntreprise(@PathVariable Long entrepriseId) {
+        List<ConventionResponseDTO> conventions = conventionService.findConventionsByEntreprise(entrepriseId);
+        return ResponseEntity.ok(conventions);
+    }
+
+    @GetMapping("/enseignant/{enseignantId}")
+    @PreAuthorize("hasRole('ENSEIGNANT') or hasRole('ADMIN')")
+    public ResponseEntity<List<ConventionResponseDTO>> findConventionsByEnseignant(@PathVariable Long enseignantId) {
+        List<ConventionResponseDTO> conventions = conventionService.findConventionsByEnseignant(enseignantId);
         return ResponseEntity.ok(conventions);
     }
 
@@ -88,9 +94,12 @@ public class ConventionController {
         return ResponseEntity.ok(convention);
     }
 
-    @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadConvention(@PathVariable Long id) throws Exception {
-        return conventionService.downloadConvention(id);
+
+
+    @GetMapping("/{id}/generate-pdf")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('ENSEIGNANT') or hasRole('ENTREPRISE')")
+    public ResponseEntity<byte[]> generateConventionPdf(@PathVariable Long id) throws Exception {
+        return conventionService.generateConventionPdf(id);
     }
 
 }

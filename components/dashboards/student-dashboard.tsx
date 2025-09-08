@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, MapPin, Clock, Building2, Send, Eye, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { Search, MapPin, Clock, Building2, Send, Eye, CheckCircle, XCircle, AlertCircle, Filter } from "lucide-react"
 import { internshipService, type InternshipOffer } from "@/lib/internship-service"
 import { candidatureService, type Candidature } from "@/lib/candidature-service"
+import { secteurService, type Secteur } from "@/lib/secteur-service"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ApplyModal } from "@/components/student/apply-modal"
 import { ViewInternshipModal } from "@/components/student/view-internship-modal"
 import { EditApplicationModal } from "@/components/student/edit-application-modal"
@@ -22,8 +24,12 @@ import { toast } from "sonner"
 export function StudentDashboard() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+  const [locationFilter, setLocationFilter] = useState("")
+  const [durationFilter, setDurationFilter] = useState("")
+  const [sectorFilter, setSectorFilter] = useState("")
   const [availableInternships, setAvailableInternships] = useState<InternshipOffer[]>([])
+  const [filteredInternships, setFilteredInternships] = useState<InternshipOffer[]>([])
+  const [secteurs, setSecteurs] = useState<Secteur[]>([])
   const [myApplications, setMyApplications] = useState<Candidature[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
@@ -38,11 +44,45 @@ export function StudentDashboard() {
     try {
       const data = await internshipService.getAllInternships()
       setAvailableInternships(data)
+      setFilteredInternships(data)
     } catch (error) {
       console.error('Erreur lors du chargement des offres:', error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const loadSecteurs = async () => {
+    try {
+      const data = await secteurService.getAllSecteurs()
+      setSecteurs(data)
+    } catch (error) {
+      console.error('Erreur lors du chargement des secteurs:', error)
+    }
+  }
+
+  const handleSearch = async () => {
+    setIsLoading(true)
+    try {
+      const location = locationFilter || undefined
+      const duration = durationFilter ? parseInt(durationFilter) : undefined
+      const secteurNom = sectorFilter || undefined
+      
+      const data = await internshipService.filterInternships(location, duration, secteurNom)
+      setFilteredInternships(data)
+    } catch (error) {
+      console.error('Erreur lors de la recherche:', error)
+      toast.error('Erreur lors de la recherche')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const clearFilters = () => {
+    setLocationFilter("")
+    setDurationFilter("")
+    setSectorFilter("")
+    setFilteredInternships(availableInternships)
   }
 
   const loadMyApplications = async () => {
@@ -89,6 +129,7 @@ export function StudentDashboard() {
 
   useEffect(() => {
     loadInternships()
+    loadSecteurs()
     if (user) {
       loadMyApplications()
     }
@@ -205,26 +246,82 @@ export function StudentDashboard() {
                 <CardDescription>Trouvez le stage parfait selon vos critères</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Rechercher par titre, entreprise, compétences..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full"
-                    />
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Rechercher par titre, entreprise, compétences..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
-                  <Button>
-                    <Search className="h-4 w-4 mr-2" />
-                    Rechercher
-                  </Button>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Localisation</label>
+                      <Input
+                        placeholder="Ville, région..."
+                        value={locationFilter}
+                        onChange={(e) => setLocationFilter(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Durée (mois)</label>
+                      <Select value={durationFilter} onValueChange={setDurationFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 mois</SelectItem>
+                          <SelectItem value="2">2 mois</SelectItem>
+                          <SelectItem value="3">3 mois</SelectItem>
+                          <SelectItem value="4">4 mois</SelectItem>
+                          <SelectItem value="5">5 mois</SelectItem>
+                          <SelectItem value="6">6 mois</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Secteur</label>
+                      <Select value={sectorFilter} onValueChange={setSectorFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {secteurs.map((secteur) => (
+                            <SelectItem key={secteur.id} value={secteur.nomSecteur}>
+                              {secteur.nomSecteur}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button onClick={handleSearch} disabled={isLoading}>
+                      <Search className="h-4 w-4 mr-2" />
+                      Rechercher
+                    </Button>
+                    <Button variant="outline" onClick={clearFilters}>
+                      <Filter className="h-4 w-4 mr-2" />
+                      Effacer les filtres
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Available Internships */}
             <div className="grid gap-4">
-              {availableInternships.map((internship) => (
+              {isLoading ? (
+                <div className="text-center py-8">Recherche en cours...</div>
+              ) : (
+                filteredInternships.map((internship) => (
                 <Card key={internship.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
@@ -276,7 +373,13 @@ export function StudentDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
+              {!isLoading && filteredInternships.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Aucune offre de stage ne correspond à vos critères de recherche.
+                </div>
+              )}
             </div>
           </TabsContent>
 

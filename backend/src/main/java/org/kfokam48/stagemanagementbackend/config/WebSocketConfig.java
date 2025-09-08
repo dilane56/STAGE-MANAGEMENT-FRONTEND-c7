@@ -24,7 +24,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-chat")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
-        
+
         registry.addEndpoint("/ws-chat")
                 .setAllowedOriginPatterns("*");
     }
@@ -32,8 +32,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
         registration.setMessageSizeLimit(64 * 1024) // 64KB
-                   .setSendBufferSizeLimit(512 * 1024) // 512KB
-                   .setSendTimeLimit(20000); // 20 seconds
+                .setSendBufferSizeLimit(512 * 1024) // 512KB
+                .setSendTimeLimit(20000); // 20 seconds
     }
 
 

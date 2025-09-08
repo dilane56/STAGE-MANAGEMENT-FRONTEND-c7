@@ -14,9 +14,9 @@ public interface OffreStageRepository extends JpaRepository<OffreStage, Long> {
 
     // Filtrer les offres par localisation, durée et secteur
     @Query("SELECT o FROM OffreStage o WHERE " +
-            "(:localisation IS NULL OR LOWER(o.localisation) LIKE LOWER(CONCAT('%', :localisation, '%'))) AND " +
-            "(:duree IS NULL OR o.dureeStage = :duree) AND " +
-            "(:secteurNom IS NULL OR LOWER(o.secteur.nomSecteur) LIKE LOWER(CONCAT('%', :secteurNom, '%')))")
+            "(:localisation IS NULL OR LOWER(o.localisation) LIKE CONCAT('%', :localisation, '%')) AND " +
+            "(:dureeStage IS NULL OR o.dureeStage = :dureeStage) AND " +
+            "(:secteurNom IS NULL OR LOWER(o.secteur.nomSecteur) LIKE CONCAT('%', :secteurNom, '%'))")
     List<OffreStage> filtrer(
             @Param("localisation") String localisation,
             @Param("dureeStage") Integer dureeStage,

@@ -4,8 +4,9 @@ import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, Bell, MessageSquare } from "lucide-react"
+import { LogOut, MessageSquare } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -57,9 +58,7 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
+              <NotificationDropdown />
               <Button variant="ghost" size="icon">
                 <MessageSquare className="h-5 w-5" />
               </Button>

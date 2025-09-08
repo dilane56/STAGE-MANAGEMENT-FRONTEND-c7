@@ -16,6 +16,7 @@ public class CandidatureResponseDTO {
     private String cheminFichier;
     private LocalDate dateReponse;
     private String messageReponse;
+    private Long etudiantId;
 
     // Add any other fields you need for the response
 }

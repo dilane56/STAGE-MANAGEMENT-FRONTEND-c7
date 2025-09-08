@@ -33,4 +33,12 @@ public class NotificationRestController {
        emailService.sendMail(mailDTO);
         return ResponseEntity.ok("mail envoyer avec succes");
     }
+    @PutMapping("utilisateur/{userId}/lire-tout")
+    public void markAllAsReadByUserId(@PathVariable Long userId) {
+        notificationService.markAllAsReadByUserId(userId);
+    }
+    @GetMapping("utilisateur/{userId}/non-lues/count")
+    public int getNumberOfNotReadNotificationByUserId(@PathVariable Long userId){
+        return notificationService.getNumberOfNotReadNotificationByUserId(userId);
+    }
 }

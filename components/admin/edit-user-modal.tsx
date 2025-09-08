@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { X } from "lucide-react"
 import { userService, type BackendUser } from "@/lib/user-service"
+import { toast } from "sonner"
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -27,7 +28,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
     domaineActivite: "",
     siteWeb: "",
     description: "",
-    specialite: "",
+    filiere: "",
     grade: "",
     departement: "",
     password: ""
@@ -120,6 +121,30 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="filiere">Filière</Label>
+              <Input
+                id="filiere"
+                value={formData.filiere}
+                onChange={(e) => setFormData({ ...formData, filiere: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="grade">Grade</Label>
+              <Input
+                id="grade"
+                value={formData.grade}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="departement">Département</Label>
+              <Input
+                id="departement"
+                value={formData.departement}
+                onChange={(e) => setFormData({ ...formData, departement: e.target.value })}
+              />
+            </div>
           </>
         )
       default:
@@ -141,7 +166,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
         domaineActivite: user.profile?.domaineActivite || "",
         siteWeb: user.profile?.siteWeb || "",
         description: user.profile?.description || "",
-        specialite: user.profile?.specialite || "",
+        filiere: user.profile?.filiere || "",
         grade: user.profile?.grade || "",
         departement: user.profile?.departement || "",
         password: "" // Champ optionnel pour la mise à jour du mot de passe
@@ -186,7 +211,10 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
         case "ENSEIGNANT":
           await userService.updateTeacher(user.id, {
             ...updateData,
-            universite: formData.universite
+            universite: formData.universite,
+            filiere: formData.filiere || undefined,
+            grade: formData.grade || undefined,
+            departement: formData.departement || undefined
           })
           break
         case "ADMIN":
@@ -194,10 +222,11 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user }: EditUser
           break
       }
       
+      toast.success("Utilisateur modifié avec succès!")
       onUserUpdated()
       onClose()
     } catch (error: any) {
-      alert(error.message || 'Erreur lors de la modification')
+      toast.error(error.message || 'Erreur lors de la modification')
     } finally {
       setIsLoading(false)
     }

@@ -76,7 +76,7 @@ public class EnseignantServiceImpl implements EnseignantService {
         enseignant.setFullName(enseignantDTO.getFullName());
         enseignant.setTelephone(enseignantDTO.getTelephone());
         enseignant.setAvatar(enseignantDTO.getAvatar());
-        enseignant.setSpecialite(enseignantDTO.getSpecialite());
+        enseignant.setFiliere(enseignantDTO.getFiliere());
         enseignant.setGrade(enseignantDTO.getGrade());
         enseignant.setDepartement(enseignantDTO.getDepartement());
         enseignant.setUniversite(enseignantDTO.getUniversite());

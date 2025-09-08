@@ -8,7 +8,7 @@ import lombok.Data;
 @Entity
 @PrimaryKeyJoinColumn(name = "utilisateur_id")
 public class Enseignant extends Utilisateur {
-    private String specialite;
+    private String filiere;
     private String grade;
     private String departement;
     private String universite;
