@@ -11,7 +11,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import { Users, Building2, FileText, TrendingUp, Plus, Eye, Settings, Download, Search, Trash2, Tag, MapPin, Clock, CheckCircle } from "lucide-react"
 import { userService, type BackendUser } from "@/lib/user-service"
-import { statsService, type AdminStats } from "@/lib/stats-service"
+import { statsService, type AdminStats, type MonthlyStats, type SectorStats } from "@/lib/stats-service"
 import { secteurService, type Secteur } from "@/lib/secteur-service"
 import { internshipService, type InternshipOffer } from "@/lib/internship-service"
 import { conventionService, type Convention } from "@/lib/convention-service"
@@ -35,23 +35,9 @@ export function AdminDashboard() {
     pendingConventions: 0,
   })
 
-  const internshipsByField = [
-    { name: "Informatique", value: 65, color: "#3b82f6" },
-    { name: "Marketing", value: 28, color: "#10b981" },
-    { name: "Design", value: 22, color: "#f59e0b" },
-    { name: "Finance", value: 18, color: "#ef4444" },
-    { name: "RH", value: 12, color: "#8b5cf6" },
-    { name: "Autres", value: 11, color: "#6b7280" },
-  ]
-
-  const monthlyStats = [
-    { month: "Jan", internships: 12, applications: 45 },
-    { month: "Fév", internships: 18, applications: 67 },
-    { month: "Mar", internships: 25, applications: 89 },
-    { month: "Avr", internships: 32, applications: 112 },
-    { month: "Mai", internships: 28, applications: 98 },
-    { month: "Jun", internships: 35, applications: 134 },
-  ]
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([])
+  const [internshipsByField, setInternshipsByField] = useState<SectorStats[]>([])
+  const [isLoadingCharts, setIsLoadingCharts] = useState(false)
 
   const [users, setUsers] = useState<BackendUser[]>([])
   const [secteurs, setSecteurs] = useState<Secteur[]>([])
@@ -212,6 +198,7 @@ export function AdminDashboard() {
     loadSecteurs()
     loadInternships()
     loadConventions()
+    loadChartData()
   }, [])
 
   const loadStats = async () => {
@@ -220,6 +207,23 @@ export function AdminDashboard() {
       setStats(data)
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error)
+    }
+  }
+
+  const loadChartData = async () => {
+    setIsLoadingCharts(true)
+    try {
+      const [monthlyData, sectorData] = await Promise.all([
+        statsService.getMonthlyEvolution(),
+        statsService.getInternshipsBySector()
+      ])
+      setMonthlyStats(monthlyData)
+      setInternshipsByField(sectorData)
+    } catch (error) {
+      console.error('Erreur lors du chargement des données graphiques:', error)
+      toast.error('Erreur lors du chargement des graphiques')
+    } finally {
+      setIsLoadingCharts(false)
     }
   }
 
@@ -352,29 +356,38 @@ export function AdminDashboard() {
                   <CardDescription>Nombre de stages et candidatures par mois</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer
-                    config={{
-                      internships: {
-                        label: "Stages",
-                        color: "hsl(var(--chart-1))",
-                      },
-                      applications: {
-                        label: "Candidatures",
-                        color: "hsl(var(--chart-2))",
-                      },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyStats}>
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="internships" fill="var(--color-chart-1)" />
-                        <Bar dataKey="applications" fill="var(--color-chart-2)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  {isLoadingCharts ? (
+                    <div className="h-[300px] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                        <p className="text-sm text-muted-foreground">Chargement des données...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <ChartContainer
+                      config={{
+                        internships: {
+                          label: "Stages",
+                          color: "hsl(var(--chart-1))",
+                        },
+                        applications: {
+                          label: "Candidatures",
+                          color: "hsl(var(--chart-2))",
+                        },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={monthlyStats}>
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="internships" fill="var(--color-chart-1)" />
+                          <Bar dataKey="applications" fill="var(--color-chart-2)" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  )}
                 </CardContent>
               </Card>
             </div>

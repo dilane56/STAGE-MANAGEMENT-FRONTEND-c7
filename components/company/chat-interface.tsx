@@ -19,6 +19,7 @@ let stompClient: Client | null = null
 export function ChatInterface() {
   const { user } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [selectedUserName, setSelectedUserName] = useState<string>('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -66,9 +67,12 @@ export function ChatInterface() {
   }
 
   const handleSendMessage = () => {
-    if (!stompClient || !stompClient.connected || !newMessage.trim() || !selectedUserId || !user) {
+    if (!stompClient || !stompClient.connected) {
+      toast.error('Socket non connecté, impossible d\'envoyer le message')
       return
     }
+
+    if (!newMessage.trim() || !selectedUserId || !user) return
 
     const messageData = {
       expediteurId: user.id,
@@ -76,12 +80,33 @@ export function ChatInterface() {
       contenu: newMessage.trim()
     }
 
-    stompClient.publish({
-      destination: '/app/chat.send',
-      body: JSON.stringify(messageData)
-    })
+    try {
+      stompClient.publish({
+        destination: '/app/chat.send',
+        body: JSON.stringify(messageData)
+      })
 
-    setNewMessage('')
+      // optimistiquement afficher localement
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          content: messageData.contenu,
+          dateEnvoi: new Date().toISOString(),
+          expediteurId: user.id,
+          destinataireId: selectedUserId,
+          expediteurFullName: user.fullName || user.email || 'Vous',
+          destinataireFullName: selectedUserName,
+          lu: true,
+          status: 'SENT'
+        } as Message
+      ])
+
+      setNewMessage('')
+    } catch (e) {
+      console.error('Erreur en envoyant le message:', e)
+      toast.error('Erreur lors de l\'envoi du message')
+    }
   }
 
   const startConversation = (candidature: Candidature) => {
@@ -107,9 +132,11 @@ export function ChatInterface() {
     if (user?.id) {
       loadConversations()
       loadApplications()
-      
-      if (stompClient && stompClient.active) {
-        stompClient.deactivate()
+
+      // cleanup previous client if any
+      if (stompClient) {
+        try { stompClient.deactivate() } catch(e) { /* ignore */ }
+        stompClient = null
       }
 
       const socket = new SockJS('http://localhost:9001/ws-chat')
@@ -119,10 +146,10 @@ export function ChatInterface() {
         onConnect: () => {
           console.log('✅ Connecté au WebSocket!')
           setIsConnected(true)
-          
+
           stompClient?.subscribe(`/user/${user.id}/queue/messages`, onMessageReceived)
           stompClient?.subscribe(`/user/${user.id}/queue/errors`, onErrorReceived)
-          
+
           stompClient?.publish({
             destination: '/app/chat.join',
             body: user.id.toString()
@@ -142,8 +169,10 @@ export function ChatInterface() {
 
       return () => {
         if (stompClient) {
-          stompClient.deactivate()
+          try { stompClient.deactivate() } catch(e) { /* ignore */ }
+          stompClient = null
         }
+        setIsConnected(false)
       }
     }
   }, [user?.id])
@@ -151,6 +180,13 @@ export function ChatInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  const getAvatarInitials = (nameOrEmail?: string) => {
+    if (!nameOrEmail) return ''
+    const parts = nameOrEmail.split(' ')
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return nameOrEmail.slice(0,2).toUpperCase()
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
@@ -189,7 +225,7 @@ export function ChatInterface() {
                       onClick={() => startConversation(app)}
                     >
                       <p className="text-sm font-medium">{app.etudiantUsername}</p>
-                      <p className="text-xs text-muted-foreground">{app.offreStage.intitule}</p>
+                      <p className="text-xs text-muted-foreground">{app.offreStage?.intitule}</p>
                     </div>
                   ))}
                 </div>
@@ -202,23 +238,28 @@ export function ChatInterface() {
                     selectedConversation?.id === conv.id ? 'bg-blue-50' : ''
                   }`}
                   onClick={() => {
+                    setSelectedConversation(conv)
                     const otherUserEmail = user?.email === conv.participant1Email ? conv.participant2Email : conv.participant1Email
                     // Trouver l'ID de l'utilisateur depuis les candidatures
-                    const candidature = applications.find(app => app.etudiantUsername === otherUserEmail || app.etudiantUsername.includes(otherUserEmail.split('@')[0]))
-                    const otherUserId = candidature?.etudiantId || 1
+                    const candidature = applications.find(app => app.etudiantUsername === otherUserEmail || (otherUserEmail && app.etudiantUsername.includes(otherUserEmail.split('@')[0])))
+                    const otherUserId = candidature?.etudiantId
+                    if (!otherUserId) {
+                      toast.error('Impossible de trouver l\'ID du destinataire pour cette conversation')
+                      return
+                    }
                     loadMessages(otherUserId, otherUserEmail)
                   }}
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        <User className="h-4 w-4" />
+                        {getAvatarInitials(conv.nom || (user?.email === conv.participant1Email ? conv.participant2Email : conv.participant1Email))}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium truncate">
-                          {user?.email === conv.participant1Email ? conv.participant2Email : conv.participant1Email}
+                          {conv.nom || (user?.email === conv.participant1Email ? conv.participant2Email : conv.participant1Email)}
                         </p>
                       </div>
                       {conv.dernierMessage && (
@@ -282,7 +323,7 @@ export function ChatInterface() {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Tapez votre message..."
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   disabled={!isConnected}
                 />
                 <Button onClick={handleSendMessage} disabled={!newMessage.trim() || !isConnected}>
