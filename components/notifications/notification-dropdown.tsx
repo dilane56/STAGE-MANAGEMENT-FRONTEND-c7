@@ -193,9 +193,10 @@ export function NotificationDropdown() {
                             {notification.message}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(notification.dateCreation).toLocaleDateString("fr-FR", {
+                            {new Date(notification.dateEnvoi).toLocaleDateString("fr-FR", {
                               day: '2-digit',
                               month: '2-digit',
+                              year: '2-digit',
                               hour: '2-digit',
                               minute: '2-digit'
                             })}

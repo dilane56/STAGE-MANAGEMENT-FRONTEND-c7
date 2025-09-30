@@ -24,6 +24,7 @@ import { ViewUserModal } from "@/components/admin/view-user-modal"
 import { EditUserModal } from "@/components/admin/edit-user-modal"
 import { CreateSecteurModal } from "@/components/admin/secteurs/create-secteur-modal"
 import { EditSecteurModal } from "@/components/admin/secteurs/edit-secteur-modal"
+import { ChatInterface } from "@/components/company/chat-interface"
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats>({
@@ -345,6 +346,7 @@ export function AdminDashboard() {
             <TabsTrigger value="conventions">Conventions</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
             <TabsTrigger value="reports">Rapports</TabsTrigger>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -784,6 +786,17 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+          <TabsContent value="chat" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Messagerie Admin</CardTitle>
+                <CardDescription>Consultez et discutez avec les utilisateurs</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChatInterface />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
         

@@ -18,6 +18,7 @@ import { EditApplicationModal } from "@/components/student/edit-application-moda
 import { ViewApplicationModal } from "@/components/student/view-application-modal"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { ChatInterface } from "@/components/company/chat-interface"
 
 
 
@@ -236,6 +237,7 @@ export function StudentDashboard() {
           <TabsList>
             <TabsTrigger value="search">Rechercher des stages</TabsTrigger>
             <TabsTrigger value="applications">Mes candidatures</TabsTrigger>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
           </TabsList>
 
           <TabsContent value="search" className="space-y-6">
@@ -455,6 +457,17 @@ export function StudentDashboard() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+          <TabsContent value="chat" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Messagerie</CardTitle>
+                <CardDescription>Discutez avec les entreprises et votre encadrant</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChatInterface />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
         

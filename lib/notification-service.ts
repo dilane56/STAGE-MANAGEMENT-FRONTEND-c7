@@ -4,7 +4,7 @@ export interface Notification {
   id: number
   titre: string
   message: string
-  dateCreation: string
+  dateEnvoi: string
   lu: boolean
   type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
   utilisateurId: number
