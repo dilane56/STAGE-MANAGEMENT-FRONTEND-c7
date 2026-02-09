@@ -25,3 +25,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documentation de déploiement
+COMMENCEZ_ICI.md
+DEPLOIEMENT_EXPRESS.md
+DEPLOIEMENT.md
+POINTS_CRITIQUES.md
+GUIDE_VISUEL_DEPLOIEMENT.md
+DEPLOYMENT_ANALYSIS.md
+DEPLOYMENT_GUIDE.md
+RESUME_EXECUTIF.md
+README_NEW.md
+INDEX_DOCUMENTATION.md
+FICHIERS_CREES.md
+pre-deploy-check.ps1
+pre-deploy-check.sh
+.env.production.example
